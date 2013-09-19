@@ -12,9 +12,10 @@ import org.pi4.locutil.io.TraceGenerator;
 import org.pi4.locutil.trace.Parser;
 import org.pi4.locutil.trace.TraceEntry;
 
-public class FingerPrinter {
+public class PositionResultPrinter {
 	
 	TraceGenerator tg;
+	RadioMapGenerator mapGenerator;
 	
 	/**
 	 * Construct parsers for fingerprinter
@@ -23,19 +24,20 @@ public class FingerPrinter {
 	 * @param offlineSize
 	 * @param onlineSize
 	 */
-	public FingerPrinter(String offlinePath, String onlinePath, int offlineSize, int onlineSize)  throws IOException, NumberFormatException {
+	public PositionResultPrinter(RadioMapGenerator mapGenerator)  throws IOException, NumberFormatException {
 		
 		//Construct parsers
-		File offlineFile = new File(offlinePath);
+		File offlineFile = new File(mapGenerator.getOfflinePath());
 		Parser offlineParser = new Parser(offlineFile);
 		System.out.println("Offline File: " +  offlineFile.getAbsoluteFile());
 		
-		File onlineFile = new File(onlinePath);
+		File onlineFile = new File(mapGenerator.getOnlinePath());
 		Parser onlineParser = new Parser(onlineFile);
 		System.out.println("Online File: " + onlineFile.getAbsoluteFile());
 		
 		//Generate traces from parsed files
-		tg = new TraceGenerator(offlineParser, onlineParser,offlineSize,onlineSize);
+		tg = new TraceGenerator(offlineParser, onlineParser, mapGenerator.getOfflineSize(), mapGenerator.getOnlineSize());
+		this.mapGenerator = mapGenerator;
 	}
 	
 	/**
@@ -56,7 +58,8 @@ public class FingerPrinter {
 		
 		tg.generate();
 		
-		RadioMap radiomap = new RadioMap(tg.getOffline());
+		RadioMap radiomap = mapGenerator.generateRadioMap(tg.getOffline() );
+		
 		ArrayList<TraceEntry> onlineSet = RadioMap.geoIndexTraces(tg.getOnline());
 		
 		for (TraceEntry entry : onlineSet) {

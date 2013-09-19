@@ -17,8 +17,8 @@ public class FingerprintingNN {
 		
 		try {
 			
-			FingerPrinter fp = new FingerPrinter("data/MU.1.5meters.offline.trace", "data/MU.1.5meters.online.trace", 25, 5);
-			fp.run(kSize, resultPath);
+			PositionResultPrinter printer = new PositionResultPrinter( new FingerprintRadioMapGenerator() );
+			printer.run(kSize, resultPath);
 			
 		} catch (NumberFormatException e) {
 			e.printStackTrace();

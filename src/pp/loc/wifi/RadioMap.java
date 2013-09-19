@@ -25,35 +25,14 @@ public class RadioMap {
 	private ArrayList<TraceEntry> entrySet;
 	private ArrayList<MACAddress> macSet;
 	
-	public RadioMap(ArrayList<TraceEntry> offlineSet) {
-		
-		entrySet = geoIndexTraces(offlineSet);
+	public RadioMap(ArrayList<TraceEntry> entrySet) {
+		this.entrySet = entrySet;
 		macSet = getUniqueMACAddresses(entrySet);
-
 	}
 	
-	
-	/**
-	 * This will return a reduce entrylist with only unique GeoPositions and all measurements hereunder
-	 * @param entries List of TraceEntries to reduce
-	 * @return ArrayList<TraceEntry> reduced list
-	 */
-	public static ArrayList<TraceEntry> geoIndexTraces(List<TraceEntry> entries) {
-		Map<GeoPosition, TraceEntry> indexedEntries = new HashMap<GeoPosition, TraceEntry>();
-		
-		for (TraceEntry entry : entries) {
-			
-			if (indexedEntries.containsKey(entry.getGeoPosition())) {
-				indexedEntries.get(entry.getGeoPosition())
-					.getSignalStrengthSamples()
-					.add(entry.getSignalStrengthSamples());
-			} else {
-				indexedEntries.put(entry.getGeoPosition(), entry.clone());
-			}
-			
-		}
-		
-		return new ArrayList<TraceEntry>(indexedEntries.values());
+	public RadioMap(ArrayList<TraceEntry> entrySet, ArrayList<MACAddress> macSet) {
+		this.entrySet = entrySet;
+		this.macSet = macSet;
 	}
 	
 	/**
@@ -63,7 +42,6 @@ public class RadioMap {
 	 * @return
 	 */
 	public GeoPosition calcFingerprintPosition(int k, TraceEntry entry) {
-		
 		
 		HashMap<GeoPosition,Double> map = new HashMap<GeoPosition,Double>();
 		
@@ -131,6 +109,31 @@ public class RadioMap {
 		
 		return macs;
 	}
+	
+	
+	/**
+	 * This will return a reduce entrylist with only unique GeoPositions and all measurements hereunder
+	 * @param entries List of TraceEntries to reduce
+	 * @return ArrayList<TraceEntry> reduced list
+	 */
+	public static ArrayList<TraceEntry> geoIndexTraces(List<TraceEntry> entries) {
+		Map<GeoPosition, TraceEntry> indexedEntries = new HashMap<GeoPosition, TraceEntry>();
+		
+		for (TraceEntry entry : entries) {
+			
+			if (indexedEntries.containsKey(entry.getGeoPosition())) {
+				indexedEntries.get(entry.getGeoPosition())
+					.getSignalStrengthSamples()
+					.add(entry.getSignalStrengthSamples());
+			} else {
+				indexedEntries.put(entry.getGeoPosition(), entry.clone());
+			}
+			
+		}
+		
+		return new ArrayList<TraceEntry>(indexedEntries.values());
+	}
+	
 	
 	/**
 	 * Comparator used to sort positions by signal strength distance
