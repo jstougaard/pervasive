@@ -15,25 +15,6 @@ public class FingerprintRadioMapGenerator implements RadioMapGenerator {
 		return new RadioMap( RadioMap.geoIndexTraces( offlineSet ) );
 	}
 
-	@Override
-	public String getOfflinePath() {
-		return "data/MU.1.5meters.offline.trace";
-	}
-
-	@Override
-	public int getOfflineSize() {
-		return 25;
-	}
-
-	@Override
-	public String getOnlinePath() {
-		return "data/MU.1.5meters.online.trace";
-	}
-
-	@Override
-	public int getOnlineSize() {
-		return 5;
-	}
 	
 	
 }

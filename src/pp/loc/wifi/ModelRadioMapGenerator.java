@@ -20,12 +20,12 @@ public class ModelRadioMapGenerator implements RadioMapGenerator {
 	private double n;
 	private double d0;
 	
-	public ModelRadioMapGenerator(double pd0, double n, double d0) {
+	public ModelRadioMapGenerator(String apPositionPath, double pd0, double n, double d0) {
 		this.pd0 = pd0;
 		this.n = n;
 		this.d0 = d0;
 		
-		apPositions = getAPPositions("data/MU.AP.positions");
+		apPositions = getAPPositions(apPositionPath);
 		macSet = new ArrayList<MACAddress>( apPositions.keySet() );
 		
 	}
@@ -55,26 +55,6 @@ public class ModelRadioMapGenerator implements RadioMapGenerator {
 		}
 		
 		return new RadioMap(new ArrayList<TraceEntry>(modelEntries.values()), macSet);
-	}
-
-	@Override
-	public String getOfflinePath() {
-		return "data/MU.1.5meters.offline.trace";
-	}
-
-	@Override
-	public int getOfflineSize() {
-		return 25;
-	}
-
-	@Override
-	public String getOnlinePath() {
-		return "data/MU.1.5meters.online.trace";
-	}
-
-	@Override
-	public int getOnlineSize() {
-		return 5;
 	}
 	
 	private HashMap<MACAddress, GeoPosition> getAPPositions(String apFilePath) {

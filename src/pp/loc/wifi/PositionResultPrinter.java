@@ -27,16 +27,16 @@ public class PositionResultPrinter {
 	public PositionResultPrinter(RadioMapGenerator mapGenerator)  throws IOException, NumberFormatException {
 		
 		//Construct parsers
-		File offlineFile = new File(mapGenerator.getOfflinePath());
+		File offlineFile = new File(BasicSetup.offlinePath);
 		Parser offlineParser = new Parser(offlineFile);
 		System.out.println("Offline File: " +  offlineFile.getAbsoluteFile());
 		
-		File onlineFile = new File(mapGenerator.getOnlinePath());
+		File onlineFile = new File(BasicSetup.onlinePath);
 		Parser onlineParser = new Parser(onlineFile);
 		System.out.println("Online File: " + onlineFile.getAbsoluteFile());
 		
 		//Generate traces from parsed files
-		tg = new TraceGenerator(offlineParser, onlineParser, mapGenerator.getOfflineSize(), mapGenerator.getOnlineSize());
+		tg = new TraceGenerator(offlineParser, onlineParser, BasicSetup.offlineSize, BasicSetup.onlineSize);
 		this.mapGenerator = mapGenerator;
 	}
 	
@@ -56,11 +56,11 @@ public class PositionResultPrinter {
 		String newLine = System.getProperty("line.separator");
 		
 		
-		tg.generate();
+		refreshTraces();
 		
-		RadioMap radiomap = mapGenerator.generateRadioMap(tg.getOffline() );
+		RadioMap radiomap = mapGenerator.generateRadioMap( getOfflineSet() );
 		
-		ArrayList<TraceEntry> onlineSet = RadioMap.geoIndexTraces(tg.getOnline());
+		ArrayList<TraceEntry> onlineSet = RadioMap.geoIndexTraces( getOnlineSet() );
 		
 		for (TraceEntry entry : onlineSet) {
 			GeoPosition estPosition = radiomap.calcFingerprintPosition(k, entry);
@@ -73,5 +73,17 @@ public class PositionResultPrinter {
 		out.close();
 		
 		System.out.println("Results saved");
+	}
+	
+	public void refreshTraces() {
+		tg.generate();
+	}
+	
+	public ArrayList<TraceEntry> getOfflineSet() {
+		return tg.getOffline();
+	}
+	
+	public ArrayList<TraceEntry> getOnlineSet() {
+		return tg.getOnline();
 	}
 }
