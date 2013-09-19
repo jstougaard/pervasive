@@ -13,6 +13,9 @@ import org.pi4.locutil.trace.TraceEntry;
 
 public class ModelRadioMapGenerator implements RadioMapGenerator {
 	
+	public static final int UNHEARABLE_STRENGTH = -200;
+	public static final int UNHEARABLE_LIMIT = -200;
+	
 	private HashMap<MACAddress, GeoPosition> apPositions;
 	private ArrayList<MACAddress> macSet;
 	
@@ -25,7 +28,7 @@ public class ModelRadioMapGenerator implements RadioMapGenerator {
 		this.n = n;
 		this.d0 = d0;
 		
-		apPositions = getAPPositions(apPositionPath);
+		apPositions = Utils.getAPPositionsFromFile(apPositionPath);
 		macSet = new ArrayList<MACAddress>( apPositions.keySet() );
 		
 	}
@@ -33,51 +36,28 @@ public class ModelRadioMapGenerator implements RadioMapGenerator {
 	@Override
 	public RadioMap generateRadioMap(ArrayList<TraceEntry> offlineSet) {
 
-		Map<GeoPosition, TraceEntry> modelEntries = new HashMap<GeoPosition, TraceEntry>();
+		Map<GeoPosition, AvgTraceEntry> modelEntries = new HashMap<GeoPosition, AvgTraceEntry>();
 		
 		for (TraceEntry entry : offlineSet) {
 			
 			// Do not recalculate previous positions
 			if (modelEntries.containsKey(entry.getGeoPosition())) continue;
 			
-			TraceEntry newEntry = new TraceEntry();
-			newEntry.setGeoPosition( entry.getGeoPosition() );
+			AvgTraceEntry newEntry = new AvgTraceEntry(entry.getGeoPosition());
 			
 			for (MACAddress mac : macSet) {
 				double distance = entry.getGeoPosition().distance(apPositions.get(mac));
 				
 				double strength = pd0  - 10 * n * Math.log(distance / d0);
-				newEntry.getSignalStrengthSamples().put(mac, strength);
+				newEntry.put(mac, strength);
 
 			}
 			
 			modelEntries.put(entry.getGeoPosition(), newEntry);
 		}
 		
-		return new RadioMap(new ArrayList<TraceEntry>(modelEntries.values()), macSet);
+		return new RadioMap(new ArrayList<AvgTraceEntry>(modelEntries.values()), macSet, UNHEARABLE_STRENGTH, UNHEARABLE_LIMIT );
 	}
 	
-	private HashMap<MACAddress, GeoPosition> getAPPositions(String apFilePath) {
-		HashMap<MACAddress, GeoPosition> apMap = new HashMap<MACAddress, GeoPosition>();
-		try {
-			Scanner scanner = new Scanner(new FileInputStream(apFilePath));
-		    while (scanner.hasNextLine()){
-		        String[] line = scanner.nextLine().split("\\s+");
-		        
-		        if (line[0].equals("#")) // ignore the comment about the origins of the file as valid data.
-		        {}
-		        else{
-		            MACAddress tempMacAdd = MACAddress.parse(line[0]);
-			        GeoPosition tempGeoPos = new GeoPosition(Double.parseDouble(line[1]), Double.parseDouble(line[2]));
-				       
-			        apMap.put(tempMacAdd, tempGeoPos); 
-		        }
-		    }
-		    scanner.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return apMap;
-	}
+	
 }

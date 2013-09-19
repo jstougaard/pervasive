@@ -33,8 +33,9 @@ public class ModelKNN {
 		
 		try {
 			
-			PositionResultPrinter printer = new PositionResultPrinter( new ModelRadioMapGenerator("data/MU.AP.positions", -33.77, 3.415, 1) );
-			printer.run(kSize, resultsPath);
+			PositionResultPrinter printer = new PositionResultPrinter();
+			RadioMapGenerator mapGenerator = new ModelRadioMapGenerator("data/MU.AP.positions", -33.77, 3.415, 1);
+			printer.run(mapGenerator, kSize, resultsPath);
 			
 		} catch (NumberFormatException e) {
 			e.printStackTrace();

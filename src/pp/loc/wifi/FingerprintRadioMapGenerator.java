@@ -10,11 +10,12 @@ import org.pi4.locutil.trace.TraceEntry;
 
 public class FingerprintRadioMapGenerator implements RadioMapGenerator {
 
+	public static final int UNHEARABLE_STRENGTH = -100;
+	public static final int UNHEARABLE_LIMIT = -80;
+	
 	@Override
 	public RadioMap generateRadioMap(ArrayList<TraceEntry> offlineSet) {
-		return new RadioMap( RadioMap.geoIndexTraces( offlineSet ) );
+		return new RadioMap( RadioMap.geoIndexTraces( offlineSet ), UNHEARABLE_STRENGTH, UNHEARABLE_LIMIT );
 	}
-
-	
 	
 }

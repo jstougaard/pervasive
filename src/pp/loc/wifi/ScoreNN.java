@@ -18,12 +18,21 @@ public class ScoreNN {
 		System.out.println("Running ScoreNN...");
 		
 		if (args.length < 1) {
-			System.out.println("USAGE: Please provide a file to read from. E.g. results/fingerprint_NN");
+			System.out.println("USAGE: Please provide at least one file to read from. E.g. results/fingerprint_NN");
 			return;
 		}
 		
-		String fromFilename = args[0];
-		String toFilename = fromFilename + "_score.csv";
+		for (int i=0;i<args.length;i++) {
+			String fromFilename = args[i];
+			String toFilename = fromFilename + "_score.csv";
+			
+			
+			ScoreNN.generateCSV(fromFilename, toFilename);
+		}
+	}
+	
+	
+	public static void generateCSV(String fromFilename, String toFilename) {
 		
 		String newLine = System.getProperty("line.separator");
 		String delimiter = ";";
@@ -39,6 +48,9 @@ public class ScoreNN {
 
 		    while (scanner.hasNextLine()){
 		        String line = scanner.nextLine();
+		        
+		        if (line.startsWith("#")) continue; // Ignore comments
+		        
 		        double value = Double.parseDouble( line.substring(line.lastIndexOf(" ")+1) );
 
 		        errorValues.add(value);
@@ -74,7 +86,7 @@ public class ScoreNN {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		
 	}
 
 

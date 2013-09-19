@@ -8,14 +8,14 @@ import java.util.ArrayList;
 
 import org.pi4.locutil.GeoPosition;
 import org.pi4.locutil.PositioningError;
+import org.pi4.locutil.Statistics;
 import org.pi4.locutil.io.TraceGenerator;
 import org.pi4.locutil.trace.Parser;
 import org.pi4.locutil.trace.TraceEntry;
 
 public class PositionResultPrinter {
 	
-	TraceGenerator tg;
-	RadioMapGenerator mapGenerator;
+	private TraceGenerator tg;
 	
 	/**
 	 * Construct parsers for fingerprinter
@@ -24,7 +24,7 @@ public class PositionResultPrinter {
 	 * @param offlineSize
 	 * @param onlineSize
 	 */
-	public PositionResultPrinter(RadioMapGenerator mapGenerator)  throws IOException, NumberFormatException {
+	public PositionResultPrinter()  throws IOException, NumberFormatException {
 		
 		//Construct parsers
 		File offlineFile = new File(BasicSetup.offlinePath);
@@ -37,7 +37,6 @@ public class PositionResultPrinter {
 		
 		//Generate traces from parsed files
 		tg = new TraceGenerator(offlineParser, onlineParser, BasicSetup.offlineSize, BasicSetup.onlineSize);
-		this.mapGenerator = mapGenerator;
 	}
 	
 	/**
@@ -48,7 +47,7 @@ public class PositionResultPrinter {
 	 * @throws IOException
 	 * @throws NumberFormatException
 	 */
-	public void run(int k, String resultPath)  throws IOException, NumberFormatException {
+	public void run(RadioMapGenerator mapGenerator, int k, String resultPath)  throws IOException, NumberFormatException {
 		// Create file 
 		System.out.println("Saving results to: " + resultPath);
 		FileWriter fstream = new FileWriter(resultPath);
@@ -56,16 +55,24 @@ public class PositionResultPrinter {
 		String newLine = System.getProperty("line.separator");
 		
 		
-		refreshTraces();
-		
-		RadioMap radiomap = mapGenerator.generateRadioMap( getOfflineSet() );
-		
-		ArrayList<TraceEntry> onlineSet = RadioMap.geoIndexTraces( getOnlineSet() );
-		
-		for (TraceEntry entry : onlineSet) {
-			GeoPosition estPosition = radiomap.calcFingerprintPosition(k, entry);
-			PositioningError e = new PositioningError(entry.getGeoPosition(), estPosition);
-			out.write( e.toString() + newLine );
+		for (int i = 0; i<BasicSetup.calculationIterations;i++) {
+			System.out.println("Process: "+ i + " / " + BasicSetup.calculationIterations);
+			refreshTraces();
+			
+			RadioMap radiomap = mapGenerator.generateRadioMap( getOfflineSet() );
+			
+			ArrayList<AvgTraceEntry> onlineSet = RadioMap.geoIndexTraces( getOnlineSet() );
+			
+			out.write("#"+newLine);
+			out.write("# " + "Position estimates with k="+ k + "; Iteration #" + (i+1) + newLine);
+			out.write("#"+newLine);
+			
+			for (AvgTraceEntry entry : onlineSet) {
+				GeoPosition estPosition = radiomap.calcFingerprintPosition(k, entry);
+				PositioningError e = new PositioningError(entry.getGeoPosition(), estPosition);
+				out.write( e.toString() + newLine );
+	
+			}
 
 		}
 		
@@ -73,6 +80,32 @@ public class PositionResultPrinter {
 		out.close();
 		
 		System.out.println("Results saved");
+	}
+	
+	public double calcAverageMedianDistance(RadioMapGenerator mapGenerator, int k) {
+		double total = 0;
+		int count = 0;
+		
+		for (int i = 0; i<BasicSetup.calculationIterations;i++) {
+			
+			refreshTraces();
+			
+			RadioMap radiomap = mapGenerator.generateRadioMap( getOfflineSet() );
+			
+			ArrayList<AvgTraceEntry> onlineSet = RadioMap.geoIndexTraces( getOnlineSet() );
+			double[] distances = new double[onlineSet.size()];
+			int j = 0;
+			for (AvgTraceEntry entry : onlineSet) {
+				GeoPosition estPosition = radiomap.calcFingerprintPosition(k, entry);
+				distances[j] = entry.getGeoPosition().distance( estPosition );
+				j++;
+			}
+			
+			total += Statistics.median(distances);
+			count++;
+		}
+		
+		return total/count;
 	}
 	
 	public void refreshTraces() {
@@ -86,4 +119,5 @@ public class PositionResultPrinter {
 	public ArrayList<TraceEntry> getOnlineSet() {
 		return tg.getOnline();
 	}
+	
 }

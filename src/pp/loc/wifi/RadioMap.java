@@ -15,23 +15,27 @@ public class RadioMap {
 	/**
 	 *  If a access point is not available in either the offline or online trace, this value will be used
 	 */
-	public static final int UNHEARABLE_STRENGTH = -300;
+	private int unhearableStrength = -100;
 	
 	/**
 	 * If both offline and online strength is below this value, the AP will be ignored in the calculation
 	 */
-	public static final int UNHEARABLE_LIMIT = -80;
+	private int unhearableLimit = -90;
 	
-	private ArrayList<TraceEntry> entrySet;
+	private ArrayList<AvgTraceEntry> entrySet;
 	private ArrayList<MACAddress> macSet;
 	
-	public RadioMap(ArrayList<TraceEntry> entrySet) {
+	public RadioMap(ArrayList<AvgTraceEntry> entrySet, int unhearableStrength, int unhearableLimit) {
 		this.entrySet = entrySet;
+		this.unhearableStrength = unhearableStrength;
+		this.unhearableLimit = unhearableLimit;
 		macSet = getUniqueMACAddresses(entrySet);
 	}
 	
-	public RadioMap(ArrayList<TraceEntry> entrySet, ArrayList<MACAddress> macSet) {
+	public RadioMap(ArrayList<AvgTraceEntry> entrySet, ArrayList<MACAddress> macSet, int unhearableStrength, int unhearableLimit) {
 		this.entrySet = entrySet;
+		this.unhearableStrength = unhearableStrength;
+		this.unhearableLimit = unhearableLimit;
 		this.macSet = macSet;
 	}
 	
@@ -41,12 +45,12 @@ public class RadioMap {
 	 * @param entry The measurement to find position of
 	 * @return
 	 */
-	public GeoPosition calcFingerprintPosition(int k, TraceEntry entry) {
+	public GeoPosition calcFingerprintPosition(int k, AvgTraceEntry entry) {
 		
 		HashMap<GeoPosition,Double> map = new HashMap<GeoPosition,Double>();
 		
-		for (TraceEntry knownEntry : entrySet) {
-			map.put(knownEntry.getGeoPosition(), calcSignalDistance(entry.getSignalStrengthSamples(), knownEntry.getSignalStrengthSamples()));
+		for (AvgTraceEntry knownEntry : entrySet) {
+			map.put(knownEntry.getGeoPosition(), calcSignalDistance(entry, knownEntry));
 		}
 		
 		// Sort by distance
@@ -75,16 +79,16 @@ public class RadioMap {
 	 * @param knownPos A known sample from radiomap
 	 * @return signal strength distance
 	 */
-	private double calcSignalDistance(SignalStrengthSamples myPos, SignalStrengthSamples knownPos) {
+	private double calcSignalDistance(AvgTraceEntry myPos, AvgTraceEntry knownPos) {
 		double sum = 0;
 		
 		for (MACAddress mac : macSet) {
 			if (!myPos.containsKey(mac) && !knownPos.containsKey(mac)) continue;
 			
-			double knownVal = knownPos.containsKey(mac) ? knownPos.getAverageSignalStrength(mac) : UNHEARABLE_STRENGTH;
-			double myVal = myPos.containsKey(mac) ? myPos.getAverageSignalStrength(mac) : UNHEARABLE_STRENGTH;
+			double knownVal = knownPos.containsKey(mac) ? knownPos.getAverageSignalStrength(mac) : unhearableStrength;
+			double myVal = myPos.containsKey(mac) ? myPos.getAverageSignalStrength(mac) : unhearableStrength;
 			
-			if (knownVal < UNHEARABLE_LIMIT && myVal < UNHEARABLE_LIMIT) continue;
+			if (knownVal < unhearableLimit && myVal < unhearableLimit) continue;
 			
 			sum += Math.pow( myVal - knownVal, 2);
 		}
@@ -97,11 +101,11 @@ public class RadioMap {
 	 * @param entries
 	 * @return
 	 */
-	private ArrayList<MACAddress> getUniqueMACAddresses(ArrayList<TraceEntry> entries) {
+	private ArrayList<MACAddress> getUniqueMACAddresses(ArrayList<AvgTraceEntry> entries) {
 		ArrayList<MACAddress> macs = new ArrayList<MACAddress>();
 		
-		for (TraceEntry entry : entries) {
-			for (MACAddress mac : entry.getSignalStrengthSamples().keySet()) {
+		for (AvgTraceEntry entry : entries) {
+			for (MACAddress mac : entry.getMacAddress()) {
 				if (!macs.contains(mac))
 					macs.add(mac);
 			}
@@ -116,24 +120,21 @@ public class RadioMap {
 	 * @param entries List of TraceEntries to reduce
 	 * @return ArrayList<TraceEntry> reduced list
 	 */
-	public static ArrayList<TraceEntry> geoIndexTraces(List<TraceEntry> entries) {
-		Map<GeoPosition, TraceEntry> indexedEntries = new HashMap<GeoPosition, TraceEntry>();
+	public static ArrayList<AvgTraceEntry> geoIndexTraces(List<TraceEntry> entries) {
+		Map<GeoPosition, AvgTraceEntry> indexedEntries = new HashMap<GeoPosition, AvgTraceEntry>();
 		
-		for (TraceEntry entry : entries) {
-			
+		for (TraceEntry entry : entries) {	
 			if (indexedEntries.containsKey(entry.getGeoPosition())) {
 				indexedEntries.get(entry.getGeoPosition())
-					.getSignalStrengthSamples()
 					.add(entry.getSignalStrengthSamples());
 			} else {
-				indexedEntries.put(entry.getGeoPosition(), entry.clone());
-			}
-			
+				indexedEntries.put(entry.getGeoPosition(), new AvgTraceEntry(entry));
+			}	
 		}
-		
-		return new ArrayList<TraceEntry>(indexedEntries.values());
+				
+		return new ArrayList<AvgTraceEntry>(indexedEntries.values());
 	}
-	
+
 	
 	/**
 	 * Comparator used to sort positions by signal strength distance

@@ -17,8 +17,8 @@ public class FingerprintingNN {
 		
 		try {
 			
-			PositionResultPrinter printer = new PositionResultPrinter( new FingerprintRadioMapGenerator() );
-			printer.run(kSize, resultPath);
+			PositionResultPrinter printer = new PositionResultPrinter();
+			printer.run(new FingerprintRadioMapGenerator(), kSize, resultPath);
 			
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
